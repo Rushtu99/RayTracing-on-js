@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ray Tracing Engine</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="container">
+        <div id="controls">
+            <h2>Controls</h2>
+            <div class="control-group">
+                <label for="samplesPerPixel">Samples Per Pixel:</label>
+                <input type="range" id="samplesPerPixel" min="1" max="10" value="1">
+                <span id="samplesPerPixelValue">1</span>
+            </div>
+            <div class="control-group">
+                <label for="lensRadius">Lens Radius:</label>
+                <input type="range" id="lensRadius" min="0" max="1" step="0.01" value="0">
+                <span id="lensRadiusValue">0</span>
+            </div>
+            <div class="control-group">
+                <label for="focalLength">Focal Length:</label>
+                <input type="range" id="focalLength" min="0" max="5" step="0.1" value="1">
+                <span id="focalLengthValue">1</span>
+            </div>
+            <div class="control-group">
+                <label for="numBounces">Number of Bounces:</label>
+                <input type="range" id="numBounces" min="1" max="10" value="3">
+                <span id="numBouncesValue">3</span>
+            </div>
+            <div class="control-group">
+                <input type="checkbox" id="accumulateButton">
+                <label for="accumulateButton">Accumulate</label>
+            </div>
+            <button id="changeColorButton">Change Color</button>
+            <div class="control-group">
+                <input type="checkbox" id="skylightButton">
+                <label for="skylightButton">Enable Skylight</label>
+            </div>
+            <div class="control-group">
+                <button id="startRender">Start Render</button>
+                <button id="stopRender">Stop Render</button>
+            </div>
+
+            <div class="control-group">
+                <button id="camX+" value = 0>CAM X +</button>
+                <button id="camX-" value = 1>CAM X -</button>
+            </div>
+            <div class="control-group">
+                <button id="camY+" value = 2>CAM Y +</button>
+                <button id="camY-" value = 3>CAM Y -</button>  
+            </div>            
+            <div class="control-group">
+                <button id="camZ+" value = 4>CAM Z +</button>
+                <button id="camZ-" value = 5>CAM Z -</button>
+            </div>              
+                    <!-- <div class="control-group">
+                <input type="checkbox" id="renderOnce">
+                <label for="renderOnce">One time Render</label>
+            </div> -->
+        </div>
+        <div id="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+    <script src="utils.js" type="module"></script>
+    <script src="renderer.js" type="module"></script>
+    <script src="main.js" type="module"></script>
+</body>
+</html>

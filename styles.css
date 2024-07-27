@@ -1,0 +1,92 @@
+/* styles.css */
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #222; /* Dark background color */
+    overflow: hidden;
+}
+
+#container {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    margin-top: 15px;
+    align-items: flex-start;
+}
+
+#controls {
+    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white background */
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    font-size: 14px;
+    color: #333; /* Darker font color */
+    position: relative;
+}
+
+#controls h2 {
+    margin-top: 0;
+    font-size: 18px;
+    color: #333; /* Darker font color for heading */
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    gap: 10px;
+}
+
+.control-group label {
+    width: 200px;
+    color: #333; /* Darker font color for labels */
+}
+
+.control-group input[type="range"] {
+    flex: 1;
+    margin-left: 10px;
+}
+
+.control-group span {
+    margin-left: 10px;
+    font-weight: bold;
+    color: #333; /* Darker font color for values */
+}
+
+button {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover {
+    background-color: #555;
+}
+
+#canvas-container {
+    border: 4px solid #444; /* Thicker border for better visibility */
+    border-radius: 8px;
+    overflow: hidden;
+    flex-grow: 1; /* Allow the canvas to grow to fill available space */
+}
+
+#canvas {
+    display: block;
+    border: 6px solid #222; /* Darker border for better contrast */
+    border-radius: 8px;
+    background-color: #000; /* Dark background for the canvas */
+}

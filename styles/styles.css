@@ -1,7 +1,7 @@
 /* styles.css */
-#stopRender{
+/* #stopRender{
     display:none;
-}
+} */
 body {
     margin: 0;
     font-family: Arial, sans-serif;
@@ -29,7 +29,7 @@ body {
     border-radius: 8px;
     padding: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    width: 220px;
+    width: 330px;
     font-size: 12px;
     font-weight: 700;
     color: #333; /* Darker font color */
@@ -58,6 +58,9 @@ body {
 .control-group input[type="range"] {
     flex: 1;
     margin-left: 2px;
+}
+.control-group input[type="checkbox"] {
+    margin-right: 10px;
 }
 
 .control-group span {

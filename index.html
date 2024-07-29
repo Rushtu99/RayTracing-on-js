@@ -4,11 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ray Tracing Engine</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/tiny-ui-toggle.css">
+
+    <link rel="stylesheet" href="styles/styles.css">
+
 </head>
 <body>
     <div id="container">
         <div id="controls">
+            
             <h2>Controls</h2>
             <div class="control-group">
                 <label for="samplesPerPixel">Samples Per Pixel:</label>
@@ -17,7 +22,7 @@
             </div>
             <div class="control-group">
                 <label for="lensRadius">Lens Radius:</label>
-                <input type="range" id="lensRadius" min="0" max="1" step="0.01" value="0">
+                <input type="range" id="lensRadius" min="0" max="1" step="0.1" value="0">
                 <span id="lensRadiusValue">0</span>
             </div>
             <div class="control-group">
@@ -31,13 +36,19 @@
                 <span id="numBouncesValue">3</span>
             </div>
             <div class="control-group">
-                <input type="checkbox" id="accumulateButton">
-                <label for="accumulateButton">Accumulate</label>
+                <label for="renderOnChange">Render Changes</label>
+                <input type="checkbox" id="renderOnChange">
+
+                <label for="skylightButton">Enable Skylight</label>
+                <input type="checkbox" id="skylightButton">
             </div>
             <button id="changeColorButton">Change Color</button>
             <div class="control-group">
-                <input type="checkbox" id="skylightButton">
-                <label for="skylightButton">Enable Skylight</label>
+                <label for="accumulateButton">Accumulate</label>
+                <input type="checkbox" id="accumulateButton">
+                
+                <label for="renderOnce" >One time Render</label>
+                <input type="checkbox" id="renderOnce" checked>
             </div>
             <div class="control-group">
                 <button id="startRender">Start Render</button>
@@ -56,10 +67,41 @@
                 <button id="camZ+" value = 4>CAM Z +</button>
                 <button id="camZ-" value = 5>CAM Z -</button>
             </div>              
-                    <!-- <div class="control-group">
-                <input type="checkbox" id="renderOnce">
-                <label for="renderOnce">One time Render</label>
-            </div> -->
+            <section class="demo demo--menu">
+
+                <div class="toggle-outer">
+                  <div>Menu logo</div>
+    
+                  <div class="menu toggle-panel">
+                    <div class="toggle-outer">
+                      <button class="toggle" aria-expanded="false">Menu One <span>&lt;</span></button>
+    
+                      <div class="toggle-panel" aria-hidden="true">
+                        <div class="toggle-panel-content">
+                          <a href="#">Menu item one</a>
+                          <a href="#">Menu item two</a>
+                          <a href="#">Menu item three</a>
+                        </div>
+                      </div>
+                    </div>
+    
+                    <div class="toggle-outer">
+                      <button class="toggle" aria-expanded="false">Menu Two <span>&lt;</span></button>
+                      <div class="toggle-panel" aria-hidden="true">
+                        <div class="toggle-panel-content">
+                          <a href="#">Menu item one</a>
+                          <a href="#">Menu item two</a>
+                          <a href="#">Menu item three</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+    
+                  <button class="toggle" data-toggle-target=".menu" data-toggle-close-auto="click" aria-expanded="false">Mobile Menu</button>
+                </div>
+    
+              </section>
+    
         </div>
         <div id="canvas-container">
             <canvas id="canvas"></canvas>

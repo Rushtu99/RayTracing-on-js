@@ -44,6 +44,7 @@ export class Vector {
         let b = minFrom
         return new Vector((this.x - (b)) * a + minTo, (this.y - (b)) * a + minTo, (this.z - (b)) * a + minTo)
     }
+
 }
 
 // Ray class
@@ -53,6 +54,7 @@ export class Ray {
         this.parentObj = parentObj;
         this.direction = direction.normalize();
     }
+
 }
 
 export function Color(x, y, z) {
@@ -158,4 +160,8 @@ export class Camera {
 
 export function objectCompare(a, b) {
     return Object.is(a, b);
+}
+
+export function getUnitNormalVector(constX = [-1.1], constY = [-1, 1], constZ = [-1, 1]) {
+    return (new Vector(Math.random(), Math.random(), Math.random()).normalize());
 }

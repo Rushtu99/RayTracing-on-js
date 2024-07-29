@@ -2,22 +2,52 @@
 
 import { Vector, Camera, Material, Sphere, objectCompare } from './utils.js';
 import { traceRay } from './renderer.js';
+import { Toggle, toggleAutoInit } from './scripts/tiny-ui-toggle.js';
+import { ShareUrl, ShareUrlAuto } from './scripts/share-url.js';
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+
+
+window.addEventListener('DOMContentLoaded', (event) => {
+    // Initialize all elements with default options, these can be overridden by reinitializing or with data attributes on the element.
+    toggleAutoInit();
+    const menuElements = document.querySelectorAll('.menu .toggle');
+    for (const item of menuElements) {
+        Toggle({ selector: item, target: 'next', group: '.menu .toggle-panel', wrapper: '.demo--menu', closeAuto: true });
+    };
+    ShareUrlAuto(); const encodeElements = document.querySelectorAll('.encode');
+    for (const item of encodeElements) {
+        let decode = atob(item.dataset['encode']);
+
+        if (item.dataset['encodeAttribute']) {
+            item.setAttribute(`${item.dataset['encodeAttribute']}`, `${decode}`);
+        }
+    }
+});
+
 let camera;
 let scene;
 let renderer = {
-    samplesPerPixel: 5,
-    maxBounces: 1,
-    accumulate: false,
+    samplesPerPixel: 1,
+    maxBounces: 3,
+
     brdf: 'phong',
     depthOfField: false,
+
+    accumulate: false,
     renderOnce: true,
-    setRenderOnce: function (value) { this.renderOnce = value; },
+    renderOnChange: false,
+    skyLight: false,
+
     setSamplesPerPixel: function (value) { this.samplesPerPixel = value; },
     setNumBounces: function (value) { this.maxBounces = value; },
+
+    setSkyLight: function (value) { this.skyLight = value; },
+    setRenderOnChange: function (value) { this.renderOnChange = value; },
     setAccumulate: function (value) { this.accumulate = value; },
+    setRenderOnce: function (value) { this.renderOnce = value; },
+
     setBRDF: function (value) { this.brdf = value; },
     setDepthOfField: function (value) { this.depthOfField = value; },
 };
@@ -55,10 +85,10 @@ function setupScene() {
         ],
         objects: [
             new Sphere(new Vector(0, 0, -10), 20, new Material(new Vector(1, 0, 0), 0.1, 0.5)), // Red, rough
-            new Sphere(new Vector(40, 0, 0), 20, new Material(new Vector(0, 1, 0), 0.3, 0.1)), // Green, less rough
-            new Sphere(new Vector(10, 0, 60), 30, new Material(new Vector(0, 0, 1), 0.5, 0.8)), // Blue, metallic
+            // new Sphere(new Vector(40, 0, 0), 20, new Material(new Vector(0, 1, 0), 0.3, 0.1)), // Green, less rough
+            // new Sphere(new Vector(10, 0, 60), 30, new Material(new Vector(0, 0, 1), 0.5, 0.8)), // Blue, metallic
             new Sphere(new Vector(0, -2020, 0), 2000, new Material(new Vector(1, 1, 0), 0.2, 0.2, 5)), // Yellow, emissive
-            new Sphere(new Vector(10, 0, 30), 30, new Material(new Vector(1, 1, 1), 0.0, 0.0, 0)) // White, non-emissive
+            // new Sphere(new Vector(10, 0, 30), 30, new Material(new Vector(1, 1, 1), 0.0, 0.0, 0)) // White, non-emissive
         ]
     };
 }
@@ -70,12 +100,12 @@ function render() {
     let data = imageData.data;
     let cameraControl = null
     let startTime = performance.now();
-
+    let prevPerformance, nowPerformance;
 
     let ttt = new Vector(0, 0, 0);
     let lim = 1000
     let check = [-lim, lim];
-    let te, t=20 
+    let te, t = 1
     let cur = 0;
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
@@ -83,7 +113,7 @@ function render() {
             let v = height - y
             let color = new Vector(0, 0, 0);
             for (let s = 0; s < renderer.samplesPerPixel; s++) {
-             let ray = camera.getRay(u, v);
+                let ray = camera.getRay(u, v);
                 color = color.add(traceRay(ray, scene, renderer.maxBounces));
             }
             if (camera.position != cameraControl) {
@@ -103,9 +133,13 @@ function render() {
             data[index + 2] = color.z * 255;
             data[index + 3] = 255;
 
+            //performance indicator t
             if (te != Math.floor((y / height) * t)) {
-                te = Math.floor((y / height) * t) 
-                console.log(Math.round((y/height)*100) +"%..." )
+                te = Math.floor((y / height) * t)
+                prevPerformance = nowPerformance;
+                nowPerformance = performance.now()
+                console.log(Math.round((y / height) * 100) + "%.. ", Math.trunc(nowPerformance - startTime), "ms (+", Math.trunc(nowPerformance - prevPerformance), "ms)")
+
             }
         }
     }
@@ -117,14 +151,15 @@ function render() {
 }
 
 function startRendering() {
-    // if (rendering) return;
+    if (rendering) return;
     rendering = true;
-    // if (rendererrenderOnce) {
-    render();
-    // }
-    // else {
-    //     renderInterval = setInterval(render, 3000);
-    // }
+    if (renderer.renderOnce) {
+        render();
+        rendering = false
+    }
+    else {
+        renderInterval = setInterval(render, 3000);
+    }
 }
 
 function stopRendering() {
@@ -139,30 +174,41 @@ function setupControls() {
         let value = parseInt(this.value, 10);
         document.getElementById('samplesPerPixelValue').textContent = value;
         renderer.setSamplesPerPixel(value);
-        if (rendering) render();
+        if (renderer.renderOnChange) render();
+    });
+
+    document.getElementById('lensRadius').addEventListener('change', function () {
+        renderer.setDepthOfField(this.checked);
+        if (renderer.renderOnChange) render();
     });
 
     document.getElementById('numBounces').addEventListener('input', function () {
         let value = parseInt(this.value, 10);
         document.getElementById('numBouncesValue').textContent = value;
         renderer.setNumBounces(value);
-        if (rendering) render();
+        if (renderer.renderOnChange) render();
+    });
+
+
+    document.getElementById('renderOnChange').addEventListener('change', function () {
+        renderer.setRenderOnChange(this.checked);
+        if (renderer.renderOnChange) render();
+    });
+
+    document.getElementById('skylightButton').addEventListener('change', function () {
+        renderer.setSkylightButton(this.checked);
+        if (renderer.renderOnChange) render();
     });
 
     document.getElementById('accumulateButton').addEventListener('change', function () {
         renderer.setAccumulate(this.checked);
-        if (rendering) render();
+        if (renderer.renderOnChange) render();
     });
 
-    document.getElementById('lensRadius').addEventListener('change', function () {
-        renderer.setDepthOfField(this.checked);
-        if (rendering) render();
+    document.getElementById('renderOnce').addEventListener('change', function () {
+        renderer.setRenderOnce(this.checked);
+        if (renderer.renderOnChange) render();
     });
-
-    // document.getElementById('renderOnce').addEventListener('change', function () {
-    //     renderer.setRenderOnce(this.checked);
-    //     if (rendering) render();
-    // });
 
     document.getElementById('camX+').addEventListener('click', cameraReset);
     document.getElementById('camX-').addEventListener('click', cameraReset);

@@ -1,0 +1,231 @@
+/* Variables */
+:root {
+  --toggle-transition-duration: .15s;
+  --toggle-transition-duration-sm: .15s;
+  --toggle-transition-duration-close: var(--toggle-transition-duration);
+
+  --toggle-padding-xs: .25rem;
+  --toggle-padding-sm: .75rem;
+  --toggle-padding-md: 1rem;
+  --toggle-padding-lg: 2rem;
+
+  --toggle-color: #000000;
+  --toggle-background-color: rgba(128, 147, 184, 0.9);
+  --toggle-border-color: #2c3954;
+  --toggle-border-width: 1px;
+
+  --toggle-color-hover: #0034a3;
+  --toggle-background-color-hover: #a4a4a4;
+
+  --toggle-color-active: #fff;
+  --toggle-background-color-active: #00297c;
+}
+/* Essential styles */
+.toggle-outer {
+  position: relative;
+}
+.toggle {
+  color: #0157ff;
+  color: var(--toggle-color);
+  text-align: left;
+  -webkit-text-decoration: none;
+  text-decoration: none;
+  background-color: #f5f8ff;
+  background-color: var(--toggle-background-color);
+  border: none;
+  cursor: pointer;
+  transition: all .35s ease-out;
+  transition: all var(--toggle-transition-duration) ease-out;
+}
+.toggle:hover, .toggle:focus {
+    color: #0034a3;
+    color: var(--toggle-color-hover);
+    background-color: #dfeaff;
+    background-color: var(--toggle-background-color-hover);
+  }
+.toggle:focus-visible {
+    outline: 2px solid #0157ff;
+    outline: 2px solid var(--toggle-background-color-active);
+  }
+.toggle.is-active:not(.is-reset)  {
+    color: #fff;
+    color: var(--toggle-color-active);
+    background-color: #0157ff;
+    background-color: var(--toggle-background-color-active);
+  }
+.toggle:where(summary)::marker, .toggle:where(summary)::-webkit-details-marker {
+    content: '';
+    display: none;
+  }
+.toggle-panel {
+  transition: all .25s ease-out;
+  transition: all var(--toggle-transition-duration) ease-out;
+  /* Emphasized decelerate */
+  transition-timing-function: cubic-bezier(.05, .7, .1, 1);
+  /* transition-timing-function: cubic-bezier(0, 0, 0, 1);  */
+  overflow: hidden; 
+  /* Standard decelerate */
+}
+.toggle-panel:where(:not(details)) {
+    height: 0; 
+  }
+/* Closing, Closed */
+/* Other animations e.g. opacity and closing transitions can be added here */
+.toggle-panel:where(:not(.is-active)) {
+    transition-duration: .35s;
+    transition-duration: var(--toggle-transition-duration-close);
+  }
+/* Closed */
+.toggle-panel:where(:not(.is-active):not(.is-anim):not(details)) {
+    display: none; 
+  }
+/* Opening, Open, Closing */
+.toggle-panel:where(.is-active, .is-anim) {
+  }
+/* Opening */
+.toggle-panel:where(.is-active.is-anim) {
+  }
+/* Open */
+.toggle-panel:where(.is-active:not(.is-anim)) {
+    height: auto;
+    overflow: visible;
+  }
+/* Opening, Open */
+.toggle-panel:where(.is-active) {
+  }
+/* Closing */
+.toggle-panel:where(.is-anim:not(.is-active)) {
+  }
+/* Basic styling for toggle buttons and panels */
+.toggle, .toggle-panel-content, .toggle-dialog-content, .toggle-tooltip-content {
+  padding: .75rem 1rem;
+  padding: var(--toggle-padding-sm) var(--toggle-padding-md);
+  background-color: #f5f8ff;
+  background-color: var(--toggle-background-color);
+}
+/* Animation variants */
+.toggle-panel--partial {
+  display: block;
+  height: calc(2.5em + .75rem);
+}
+.toggle-panel--opacity:where(.is-anim:not(.is-active)) {
+    opacity: 0;
+  }
+.toggle-panel--none {
+  height: auto;
+  transition: none;
+}
+/* Dropdown */
+.toggle-panel--dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  transform-origin: 100% 0;
+  will-change: scale;
+  transition-timing-function: cubic-bezier(.19,1,.22,1);
+}
+.toggle-panel--dropdown:where(:not(.is-active)) {
+    opacity: .25;
+    scale: (.25);
+  }
+/* Dialog / Modal */
+/* Reset UA styles for dialog */
+.toggle-dialog:where(dialog, [popover]) {
+    margin: 0;
+    padding: 0; 
+    color: inherit; 
+    background: none;
+    border: none;
+  }
+.toggle-dialog {
+  --max-width: 480px;
+  --max-height: 480px;
+
+  position: fixed;
+  z-index: 10000;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto;
+  width: -moz-fit-content;
+  width: fit-content;
+  height: -moz-fit-content;
+  height: fit-content;
+  transition: all .35s ease-out;
+  transition: all var(--toggle-transition-duration) ease-out;
+
+  /* Closed, Closing */
+}
+.toggle-dialog:where(:not(.is-active)) {
+    opacity: 0;
+    transition-duration: .15s;
+    transition-duration: var(--toggle-transition-duration-sm);
+  }
+/* Closed */
+.toggle-dialog:where(:not(.is-active):not(.is-anim)) {
+    display: none;
+  }
+/* Optional animation on dialog content */
+.toggle-dialog > * {
+    animation-name: slideInUp;
+    animation-duration: .35s;
+    animation-duration: var(--toggle-transition-duration);
+    animation-fill-mode: forwards;
+  }
+/* Closed, Closing */
+.toggle-dialog:where(:not(.is-active)) > * {  
+      animation-name: slideOutUp; 
+      animation-duration: .15s; 
+      animation-duration: var(--toggle-transition-duration-sm);
+    }
+.toggle-dialog-content {
+    position: relative;
+    overflow: scroll;
+    overscroll-behavior: contain;
+    max-width: var(--max-width);
+    max-height: var(--max-height);
+  }
+.toggle-dialog[aria-modal='true']::after, .toggle-modal::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, .5);
+  }
+body.has-dialog {
+  }
+body.has-modal {
+    overflow: hidden;
+  }
+.toggle-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    width: -moz-max-content;
+    width: max-content;
+    transition: all .15s ease-out;
+    transition: all var(--toggle-transition-duration-sm) ease-out;
+  }
+.toggle-tooltip:where(:not(.is-active)) {
+      opacity: 0;
+    }
+.toggle-tooltip:not(.is-active):not(.is-anim) {
+      display: none;
+    }
+@keyframes slideInUp {
+    from {
+      transform: translate3d(0, 32px, 0);
+    }
+  }
+@keyframes slideOutUp {
+    to {
+      transform: translate3d(0, -32px, 0);
+    }
+  }

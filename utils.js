@@ -37,17 +37,27 @@ export class Vector {
     normalize() {
         let len = this.length();
         return new Vector(this.x / len, this.y / len, this.z / len);
+    }      //-1       1       0      1
+    scale(minFrom, maxFrom, minTo, maxTo) {
+        //(x-minF)(maxT-minT)/(maxF-minF)+minT
+        let a = (maxTo - minTo) / (maxFrom - minFrom)
+        let b = minFrom
+        return new Vector((this.x - (b)) * a + minTo, (this.y - (b)) * a + minTo, (this.z - (b)) * a + minTo)
     }
 }
 
 // Ray class
 export class Ray {
-    constructor(origin, direction) {
+    constructor(origin, direction, parentObj) {
         this.origin = origin;
+        this.parentObj = parentObj;
         this.direction = direction.normalize();
     }
 }
 
+export function Color(x, y, z) {
+    return new Vector(x / 255.0, y / 255.0, z / 255.0)
+}
 // Material class
 export class Material {
     constructor(color, emissiveColor = new Vector(0, 0, 0), roughness = 0, metallic = 0) {
@@ -63,26 +73,29 @@ export class Sphere {
         this.center = center;
         this.radius = radius;
         this.material = material;
+        this.check = [-this.lim, this.lim, -this.lim, this.lim, -this.lim / 10000000, this.lim / 1000000];
+
+        //  this.lim = 1
+        // this.check = [-this.lim, this.lim, -this.lim, this.lim, -this.lim/10000000, this.lim/1000000];
+
     }
 
     intersect(ray) {
         const oc = this.center.subtract(ray.origin);
         const a = ray.direction.dot(ray.direction);
-        const b = 2.0 * oc.dot(ray.direction);
+        const b = -2.0 * oc.dot(ray.direction);
         const f = ray.direction.dot(oc)
         const c = oc.dot(oc) - this.radius * this.radius;
         const discriminant = b * b - 4 * a * c;
-        if (discriminant > 0 && ray.direction.dot(oc) <= 0) {
+        if (discriminant > 0 && (ray.origin.subtract(this.center).length() >= this.radius)) {
             const sqrtDiscriminant = Math.sqrt(discriminant);
             const t1 = (-b - sqrtDiscriminant) / (2.0 * a);
             const t2 = (-b + sqrtDiscriminant) / (2.0 * a);
-
             if (t1 > 0 || t2 > 0) {
                 const t = t1 < t2 ? t1 : t2; // Return the closest intersection point
                 const hitPoint = ray.origin.add(ray.direction.multiply(t));
                 const normal = hitPoint.subtract(this.center).normalize();
-
-                return { point: hitPoint, normal: normal, hitDistance: t, material: this.material };
+                return { point: hitPoint, normal: normal, hitDistance: t, obj: this };
             }
         }
         return null; // No intersection
@@ -98,21 +111,51 @@ export class Camera {
         this.fov = fov;
         this.aspectRatio = aspectRatio;
         this.update();
+        this.canvasHeight = -1
+        this.canvasWidth = -1
+
+
+        // this.lim = 1
+        // this.check = [-this.lim, this.lim, -this.lim, this.lim, -this.lim/10000000, this.lim/1000000];
+
     }
 
     update() {
-        this.w = this.position.subtract(this.target).normalize();
+        this.w = this.position.subtract(this.target).normalize().multiply(-1);
         this.u = this.up.cross(this.w).normalize();
         this.v = this.w.cross(this.u).normalize();
         this.viewportHeight = Math.tan(this.fov / 2);
         this.viewportWidth = this.viewportHeight * this.aspectRatio;
+        this.canvasHeight = canvas.height
+        this.canvasWidth = canvas.width
+
     }
 
     getRay(x, y) {
-        let u = (x / canvas.width) * 2 - 1;
-        let v = (y / canvas.height) * 2 - 1;
+        let offset = new Vector(Math.random() - 0.5, Math.random() - 0.5, 0).multiply(3);
+        let u = ((x - offset.x) / this.canvasWidth) * 2 - 1;
+        let v = ((y - offset.y) / this.canvasHeight) * 2 - 1;
         let direction = this.u.multiply(u * this.viewportWidth).add(
             this.v.multiply(v * this.viewportHeight)).add(this.w);
-        return new Ray(this.position, direction);
+        let ray = new Ray(this.position, direction, this);
+
+        //min max inspector
+        // let temp = direction
+        // if (temp.x > this.check[0]) this.check[0] = temp.x
+        // if (temp.x < this.check[1]) this.check[1] = temp.x
+        // if (temp.y > this.check[2]) this.check[2] = temp.y
+        // if (temp.y < this.check[3]) this.check[3] = temp.y
+        // if (temp.z > this.check[4]) this.check[4] = temp.z
+        // if (temp.z < this.check[5]) this.check[5] = temp.z
+        // console.log(temp)
+        // console.log("x :" + this.check[1] + " to " + this.check[0])
+        // console.log("y :" + this.check[3] + " to " + this.check[2])
+        // console.log("z :" + this.check[5] + " to " + this.check[4])
+
+        return ray
     }
+}
+
+export function objectCompare(a, b) {
+    return Object.is(a, b);
 }

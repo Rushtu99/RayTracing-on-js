@@ -4,8 +4,12 @@ export class Vector {
         this.x = x;
         this.y = y;
         this.z = z;
+        this.len = -1;
+        // this.length();
     }
-
+    clone() {
+        return new Vector(this.x, this.y, this.z)
+    }
     add(v) {
         return new Vector(this.x + v.x, this.y + v.y, this.z + v.z);
     }
@@ -29,17 +33,25 @@ export class Vector {
             this.x * v.y - this.y * v.x
         );
     }
-
     length() {
-        return Math.sqrt(this.x ** 2 + this.y ** 2 + this.z ** 2);
+        if (this.len === -1) {
+
+            this.len = Math.sqrt(this.x * this.x +
+                this.y * this.y +
+                this.z * this.z);
+        }
+        this.lengthCount++;
+        return this.len;
     }
 
     normalize() {
+        // if (normalCount % 10000 == 0) console.log(normalCount)
+        // normalCount++
         let len = this.length();
         return new Vector(this.x / len, this.y / len, this.z / len);
-    }      //-1       1       0      1
+    }
+
     scale(minFrom, maxFrom, minTo, maxTo) {
-        //(x-minF)(maxT-minT)/(maxF-minF)+minT
         let a = (maxTo - minTo) / (maxFrom - minFrom)
         let b = minFrom
         return new Vector((this.x - (b)) * a + minTo, (this.y - (b)) * a + minTo, (this.z - (b)) * a + minTo)
@@ -47,26 +59,53 @@ export class Vector {
 
 }
 
+export class Hit {
+    constructor(point, ray, hitDistance, obj) {
+        this.point = point;
+        this.obj = obj;
+        this.ray = ray;
+        this.hitDistance = hitDistance
+        this.normal = this.point.subtract(obj.center).normalize();
+    }
+}
+
 // Ray class
 export class Ray {
     constructor(origin, direction, parentObj) {
         this.origin = origin;
         this.parentObj = parentObj;
-        this.direction = direction.normalize();
+        this.direction = direction;
     }
-
 }
 
 export function Color(x, y, z) {
     return new Vector(x / 255.0, y / 255.0, z / 255.0)
 }
 // Material class
-export class Material {
+export class DiffusedMaterial {
     constructor(color, emissiveColor = new Vector(0, 0, 0), roughness = 0, metallic = 0) {
         this.color = color;
         this.emissiveColor = emissiveColor;
         this.roughness = roughness;
         this.metallic = metallic;
+    }
+    ray(ray, hit) {
+        let seed = getUnitNormalVector().add(hit.normal).normalize()
+        return new Ray(hit.point, seed, hit.obj); // To be implemented
+    }
+}
+
+export class ReflectedMaterial {
+    constructor(color, emissiveColor = new Vector(0, 0, 0), roughness = 0, metallic = 0) {
+        this.color = color;
+        this.emissiveColor = emissiveColor;
+        this.roughness = roughness;
+        this.metallic = metallic;
+    }
+    ray(ray, hit) {
+        let normal = hit.normal;
+        let direction = ray.direction.subtract(normal.multiply(2 * ray.direction.dot(normal)));
+        return new Ray(hit.point, direction, hit.obj);
     }
 }
 
@@ -86,18 +125,16 @@ export class Sphere {
         const oc = this.center.subtract(ray.origin);
         const a = ray.direction.dot(ray.direction);
         const b = -2.0 * oc.dot(ray.direction);
-        const f = ray.direction.dot(oc)
         const c = oc.dot(oc) - this.radius * this.radius;
         const discriminant = b * b - 4 * a * c;
         if (discriminant > 0 && (ray.origin.subtract(this.center).length() >= this.radius)) {
             const sqrtDiscriminant = Math.sqrt(discriminant);
-            const t1 = (-b - sqrtDiscriminant) / (2.0 * a);
-            const t2 = (-b + sqrtDiscriminant) / (2.0 * a);
-            if (t1 > 0 || t2 > 0) {
-                const t = t1 < t2 ? t1 : t2; // Return the closest intersection point
+            const t = (-b - sqrtDiscriminant) / (2.0 * a);
+            // const t2 = (-b + sqrtDiscriminant) / (2.0 * a);
+            if (t > 0) {
+                // const t = t1 < t2 ? t1 : t2; // Return the closest intersection point
                 const hitPoint = ray.origin.add(ray.direction.multiply(t));
-                const normal = hitPoint.subtract(this.center).normalize();
-                return { point: hitPoint, normal: normal, hitDistance: t, obj: this };
+                return new Hit(hitPoint, ray, t, this);
             }
         }
         return null; // No intersection
@@ -134,7 +171,7 @@ export class Camera {
     }
 
     getRay(x, y) {
-        let offset = new Vector(Math.random() - 0.5, Math.random() - 0.5, 0).multiply(3);
+        let offset = new Vector(Math.random() - 0.5, Math.random() - 0.5, 0).multiply(1);
         let u = ((x - offset.x) / this.canvasWidth) * 2 - 1;
         let v = ((y - offset.y) / this.canvasHeight) * 2 - 1;
         let direction = this.u.multiply(u * this.viewportWidth).add(

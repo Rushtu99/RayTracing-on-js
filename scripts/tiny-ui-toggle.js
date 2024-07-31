@@ -368,7 +368,6 @@ const Toggle = function (options) {
 
 
 	const assignProps = function (element, elementTrigger = undefined) {
-		console.log('assignProps elem', elementTrigger, element.toggle)
 		if (element.toggle === undefined) {
 			element.toggle = defaultOptions;
 			if (elementTrigger !== undefined) element.toggle = { ...element.toggle, ...elementTrigger.toggle };
@@ -381,7 +380,6 @@ const Toggle = function (options) {
 		element.toggle.active = element.classList.contains(element.toggle.activeClass);
 		element.toggle.events = {};
 
-		console.log("AFTER ",elementTrigger,element.toggle)
 		let datasetOptions = { ...element.dataset };
 
 		for (const item in datasetOptions) {
@@ -428,7 +426,6 @@ const Toggle = function (options) {
 
 	const init = function () {
 		element = getElement(defaultOptions.selector);
-		// console.log("init elem ", element)
 		if (element === null) return;
 
 		setup(element);

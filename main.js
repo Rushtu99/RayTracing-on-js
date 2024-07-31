@@ -1,6 +1,6 @@
 // main.js
 
-import { Vector, Camera, Material, Sphere, objectCompare } from './utils.js';
+import { Vector, Camera, Sphere, objectCompare, Color, ReflectedMaterial, DiffusedMaterial } from './utils.js';
 import { traceRay } from './renderer.js';
 import { Toggle, toggleAutoInit } from './scripts/tiny-ui-toggle.js';
 import { ShareUrl, ShareUrlAuto } from './scripts/share-url.js';
@@ -29,8 +29,8 @@ window.addEventListener('DOMContentLoaded', (event) => {
 let camera;
 let scene;
 let renderer = {
-    samplesPerPixel: 1,
-    maxBounces: 3,
+    samplesPerPixel: 15,
+    maxBounces: 5,
 
     brdf: 'phong',
     depthOfField: false,
@@ -51,7 +51,12 @@ let renderer = {
     setBRDF: function (value) { this.brdf = value; },
     setDepthOfField: function (value) { this.depthOfField = value; },
 };
+document.getElementById('numBounces').value = renderer.maxBounces
+document.getElementById('numBouncesValue').textContent = renderer.maxBounces
 
+document.getElementById('samplesPerPixel').value = renderer.samplesPerPixel
+document.getElementById('samplesPerPixelValue').textContent = renderer.samplesPerPixel
+// console.log(, renderer)
 let rendering = false;
 let renderInterval;
 
@@ -61,7 +66,7 @@ function setupScene() {
     let up = new Vector(0, 1, 0);
     let fov = Math.PI / 3;
     let aspectRatio = canvas.width / canvas.height;
-    let light = new Vector(1, 1, 1).normalize()
+
     camera = new Camera(position, target, up, fov, aspectRatio);
     let prev = null
     scene = {
@@ -70,12 +75,12 @@ function setupScene() {
             let hitObject = null;
             let hitProperties = null;
             for (let obj of this.objects) {
-                let t = obj.intersect(ray);
-                if (t !== null && !objectCompare(ray.parentObj, t.obj) && t.hitDistance < closestT) {
-                    // if(t != prev){console.log(t,prev);prev = t;}
-                    closestT = t.hitDistance;
-                    hitObject = t;
-                    hitObject.hitProperties = t;
+                let hit = obj.intersect(ray);
+                if (hit !== null && !objectCompare(ray.parentObj, hit.obj) && hit.hitDistance < closestT) {
+                    // if(hit != prev){console.log(hit,prev);prev = hit;}
+                    closestT = hit.hitDistance;
+                    hitObject = hit;
+                    hitObject.hitProperties = hit;
                 }
             }
             return hitObject;
@@ -84,11 +89,17 @@ function setupScene() {
             // Placeholder for light sources
         ],
         objects: [
-            new Sphere(new Vector(0, 0, -10), 20, new Material(new Vector(1, 0, 0), 0.1, 0.5)), // Red, rough
-            // new Sphere(new Vector(40, 0, 0), 20, new Material(new Vector(0, 1, 0), 0.3, 0.1)), // Green, less rough
-            // new Sphere(new Vector(10, 0, 60), 30, new Material(new Vector(0, 0, 1), 0.5, 0.8)), // Blue, metallic
-            new Sphere(new Vector(0, -2020, 0), 2000, new Material(new Vector(1, 1, 0), 0.2, 0.2, 5)), // Yellow, emissive
-            // new Sphere(new Vector(10, 0, 30), 30, new Material(new Vector(1, 1, 1), 0.0, 0.0, 0)) // White, non-emissive
+            new Sphere(new Vector(0, 0, -10), 20, new DiffusedMaterial(new Vector(1, 0, 0), 0.1, 0.5)), // Red, rough
+            // new Sphere(new Vector(70, 0, 0), 20, new DiffusedMaterial(new Vector(0, 1, 0), 0.3, 0.1)), // Green, less rough
+            // new Sphere(new Vector(30, 40, 100), 70, new DiffusedMaterial(new Vector(0, 0, 1), 0.5, 0.8)), // Blue, metallic
+            new Sphere(new Vector(0, -2020, 0), 2000, new DiffusedMaterial(new Vector(1, 1, 0), 0.2, 0.2, 5)), // Yellow, emissive
+            new Sphere(new Vector(-60, 30, 30), 30, new DiffusedMaterial(new Vector(1, 1, 1), 0.0, 0.0, 0)), // White, non-emissive
+
+            // new Sphere(new Vector(0, 0, -10), 20, new ReflectedMaterial(new Vector(1, 0, 0), 0.1, 0.5)), // Red, rough
+            new Sphere(new Vector(70, 0, 0), 20, new ReflectedMaterial(new Vector(0, 1, 0), 0.3, 0.1)), // Green, less rough
+            new Sphere(new Vector(30, 40, 100), 70, new ReflectedMaterial(new Vector(0, 0, 1), 0.5, 0.8)), // Blue, metallic
+            // new Sphere(new Vector(0, -2020, 0), 2000, new ReflectedMaterial(new Vector(1, 1, 0), 0.2, 0.2, 5)), // Yellow, emissive
+            // new Sphere(new Vector(-60, 30, 30), 30, new ReflectedMaterial(new Vector(1, 1, 1), 0.0, 0.0, 0)) // White, non-emissive
         ]
     };
 }
@@ -105,7 +116,7 @@ function render() {
     let ttt = new Vector(0, 0, 0);
     let lim = 1000
     let check = [-lim, lim];
-    let te, t = 1
+    let te, t = 20
     let cur = 0;
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
@@ -114,23 +125,20 @@ function render() {
             let color = new Vector(0, 0, 0);
             for (let s = 0; s < renderer.samplesPerPixel; s++) {
                 let ray = camera.getRay(u, v);
-                color = color.add(traceRay(ray, scene, renderer.maxBounces));
+                Math.floor((10 * v / height)) / 10 * 255
+                let xSegment = Math.floor((10 * u / width)) / 10.0;
+                color = color.add(traceRay(ray, scene, renderer.maxBounces, xSegment));
+                // color = color.add(new Vector(0, xSegment , 0))
             }
             if (camera.position != cameraControl) {
                 console.log("CAMERAA", cameraControl, camera.position, camera, "cameraa")
                 cameraControl = camera.position
             }
-            color = color.multiply(1 / renderer.samplesPerPixel);
-
-            // color change indicator
-            // if (ttt.x != color.x) {
-            //     console.log(color)
-            //     ttt = color
-            // }
+            color = color.multiply(1 / (renderer.samplesPerPixel));
             let index = (y * width + x) * 4;
-            data[index] = color.x * 255;
-            data[index + 1] = color.y * 255;
-            data[index + 2] = color.z * 255;
+            data[index] = Math.sqrt(color.x) * 255;
+            data[index + 1] = Math.sqrt(color.y) * 255;
+            data[index + 2] = Math.sqrt(color.z) * 255;
             data[index + 3] = 255;
 
             //performance indicator t
@@ -144,13 +152,13 @@ function render() {
         }
     }
     ctx.putImageData(imageData, 0, 0);
-
     let endTime = performance.now();
     let duration = endTime - startTime;
     console.log(`Render time: ${duration.toFixed(2)} ms`);
 }
-
+let prevTime = 3000
 function startRendering() {
+    console.log("Rendering...   ==============================================================")
     if (rendering) return;
     rendering = true;
     if (renderer.renderOnce) {
@@ -158,7 +166,8 @@ function startRendering() {
         rendering = false
     }
     else {
-        renderInterval = setInterval(render, 3000);
+        // if (prevTime == 3000) { renderInterval = setInterval(render, 3000) }
+        { renderInterval = setInterval(render, prevTime * 1.25) }
     }
 }
 

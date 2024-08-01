@@ -21,6 +21,9 @@ export class Vector {
     multiply(scalar) {
         return new Vector(this.x * scalar, this.y * scalar, this.z * scalar);
     }
+    multiColor(v) {
+        return new Vector(this.x * v.x, this.y * v.y, this.z * v.z);
+    }
 
     dot(v) {
         return this.x * v.x + this.y * v.y + this.z * v.z;
@@ -81,44 +84,32 @@ export class Ray {
 export function Color(x, y, z) {
     return new Vector(x / 255.0, y / 255.0, z / 255.0)
 }
-// Material class
-export class DiffusedMaterial {
-    constructor(color, emissiveColor = new Vector(0, 0, 0), roughness = 0, metallic = 0) {
-        this.color = color;
-        this.emissiveColor = emissiveColor;
-        this.roughness = roughness;
-        this.metallic = metallic;
-    }
-    ray(ray, hit) {
-        let seed = getUnitNormalVector().add(hit.normal).normalize()
-        return new Ray(hit.point, seed, hit.obj); // To be implemented
-    }
-}
-
-export class ReflectedMaterial {
-    constructor(color, emissiveColor = new Vector(0, 0, 0), roughness = 0, metallic = 0) {
-        this.color = color;
-        this.emissiveColor = emissiveColor;
-        this.roughness = roughness;
-        this.metallic = metallic;
-    }
-    ray(ray, hit) {
-        let normal = hit.normal;
-        let direction = ray.direction.subtract(normal.multiply(2 * ray.direction.dot(normal)));
-        return new Ray(hit.point, direction, hit.obj);
-    }
-}
 
 export class Sphere {
-    constructor(center, radius, material) {
+    constructor(center, radius, material, checkered = false) {
         this.center = center;
         this.radius = radius;
         this.material = material;
         this.check = [-this.lim, this.lim, -this.lim, this.lim, -this.lim / 10000000, this.lim / 1000000];
+        this.checkered = checkered
 
         //  this.lim = 1
         // this.check = [-this.lim, this.lim, -this.lim, this.lim, -this.lim/10000000, this.lim/1000000];
+    }
 
+    color(hit) {
+        // return hit.normal.add(new Vector(1, 1, 1)).multiply(0.5)
+        return this.material.getColor(hit)
+        if (!this.checkered) return this.material.color
+        let inv_scale = 0.04;
+
+        let xInteger = (Math.floor(inv_scale * hit.point.x));
+        let yInteger = (Math.floor(inv_scale * hit.point.y));
+        let zInteger = (Math.floor(inv_scale * hit.point.z));
+
+        let isEven = (xInteger + yInteger + zInteger) % 2 == 0;
+        if (isEven) return new Vector(0.5, 0.5, 0.5)
+        return this.material.color
     }
 
     intersect(ray) {
@@ -160,7 +151,12 @@ export class Camera {
     }
 
     update() {
-        this.w = this.position.subtract(this.target).normalize().multiply(-1);
+        // let theta = (;
+        // let h = Math.tan(theta/2);
+        // let viewport_height = 2 * h * focal_length;
+
+
+        this.w = this.target.subtract(this.position).normalize();
         this.u = this.up.cross(this.w).normalize();
         this.v = this.w.cross(this.u).normalize();
         this.viewportHeight = Math.tan(this.fov / 2);
@@ -193,12 +189,4 @@ export class Camera {
 
         return ray
     }
-}
-
-export function objectCompare(a, b) {
-    return Object.is(a, b);
-}
-
-export function getUnitNormalVector(constX = [-1.1], constY = [-1, 1], constZ = [-1, 1]) {
-    return (new Vector(Math.random(), Math.random(), Math.random()).normalize());
 }

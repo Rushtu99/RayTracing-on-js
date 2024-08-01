@@ -1,6 +1,8 @@
 // main.js
 
-import { Vector, Camera, Sphere, objectCompare, Color, ReflectedMaterial, DiffusedMaterial } from './utils.js';
+import { Vector, Camera, Sphere } from './utils.js';
+import { ReflectedMaterial, DiffusedMaterial, EmmisiveMaterial } from './materials.js'
+import { objectCompare } from "./utilFunctions.js"
 import { traceRay } from './renderer.js';
 import { Toggle, toggleAutoInit } from './scripts/tiny-ui-toggle.js';
 import { ShareUrl, ShareUrlAuto } from './scripts/share-url.js';
@@ -28,28 +30,35 @@ window.addEventListener('DOMContentLoaded', (event) => {
 
 let camera;
 let scene;
-let renderer = {
+export let renderer = {
     samplesPerPixel: 15,
     maxBounces: 5,
-
+    bouncedRays: 1,
     brdf: 'phong',
     depthOfField: false,
+    debugMode: false,
 
     accumulate: false,
     renderOnce: true,
     renderOnChange: false,
     skyLight: false,
 
-    setSamplesPerPixel: function (value) { this.samplesPerPixel = value; },
-    setNumBounces: function (value) { this.maxBounces = value; },
+    setSamplesPerPixel: function (value) { this.samplesPerPixel = value; this.update() },
+    setNumBounces: function (value) { this.maxBounces = value; this.update() },
+    setDebugMode: function (value) { this.debugMode = value; this.update() },
+    setSkyLight: function (value) { this.skyLight = value; this.update() },
+    setRenderOnChange: function (value) { this.renderOnChange = value; this.update() },
+    setAccumulate: function (value) { this.accumulate = value; this.update() },
+    setRenderOnce: function (value) { this.renderOnce = value; this.update() },
 
-    setSkyLight: function (value) { this.skyLight = value; },
-    setRenderOnChange: function (value) { this.renderOnChange = value; },
-    setAccumulate: function (value) { this.accumulate = value; },
-    setRenderOnce: function (value) { this.renderOnce = value; },
-
-    setBRDF: function (value) { this.brdf = value; },
-    setDepthOfField: function (value) { this.depthOfField = value; },
+    setBRDF: function (value) { this.brdf = value; this.update() },
+    setDepthOfField: function (value) { this.depthOfField = value; this.update() },
+    update: function () {
+        document.getElementById('numBounces').value = renderer.maxBounces
+        document.getElementById('numBouncesValue').textContent = renderer.maxBounces
+        document.getElementById('samplesPerPixel').value = renderer.samplesPerPixel
+        document.getElementById('samplesPerPixelValue').textContent = renderer.samplesPerPixel
+    }
 };
 document.getElementById('numBounces').value = renderer.maxBounces
 document.getElementById('numBouncesValue').textContent = renderer.maxBounces
@@ -61,10 +70,10 @@ let rendering = false;
 let renderInterval;
 
 function setupScene() {
-    let position = new Vector(0, 0, -100);
-    let target = new Vector(0, 0, 0);
+    let position = new Vector(20, 50, -80);
+    let target = new Vector(0, 15, 0);
     let up = new Vector(0, 1, 0);
-    let fov = Math.PI / 3;
+    let fov = Math.PI / 2.5;
     let aspectRatio = canvas.width / canvas.height;
 
     camera = new Camera(position, target, up, fov, aspectRatio);
@@ -89,19 +98,35 @@ function setupScene() {
             // Placeholder for light sources
         ],
         objects: [
-            new Sphere(new Vector(0, 0, -10), 20, new DiffusedMaterial(new Vector(1, 0, 0), 0.1, 0.5)), // Red, rough
+            new Sphere(new Vector(0, 0, -10), 20, new DiffusedMaterial(new Vector(1, 0.01, 0.01), 0.1, 0.5)), // Red, rough
             // new Sphere(new Vector(70, 0, 0), 20, new DiffusedMaterial(new Vector(0, 1, 0), 0.3, 0.1)), // Green, less rough
             // new Sphere(new Vector(30, 40, 100), 70, new DiffusedMaterial(new Vector(0, 0, 1), 0.5, 0.8)), // Blue, metallic
-            new Sphere(new Vector(0, -2020, 0), 2000, new DiffusedMaterial(new Vector(1, 1, 0), 0.2, 0.2, 5)), // Yellow, emissive
-            new Sphere(new Vector(-60, 30, 30), 30, new DiffusedMaterial(new Vector(1, 1, 1), 0.0, 0.0, 0)), // White, non-emissive
+            new Sphere(new Vector(0, -2020, 0), 2000, new DiffusedMaterial(new Vector(1, 1, 0.3), 0.2, 0.2, 5), true), // Yellow, emissive
+            new Sphere(new Vector(-60, 30, 30), 30, new EmmisiveMaterial(new Vector(0.95, 1, 0.95), 0.0, 0.0, 0)), // White, non-emissive
 
             // new Sphere(new Vector(0, 0, -10), 20, new ReflectedMaterial(new Vector(1, 0, 0), 0.1, 0.5)), // Red, rough
-            new Sphere(new Vector(70, 0, 0), 20, new ReflectedMaterial(new Vector(0, 1, 0), 0.3, 0.1)), // Green, less rough
-            new Sphere(new Vector(30, 40, 100), 70, new ReflectedMaterial(new Vector(0, 0, 1), 0.5, 0.8)), // Blue, metallic
+            new Sphere(new Vector(70, 0, 0), 20, new ReflectedMaterial(new Vector(0.1, 1, 0.1), 0.3, 0.1)), // Green, less rough
+            new Sphere(new Vector(30, 40, 100), 70, new ReflectedMaterial(new Vector(0.05, 0.05, 1), 0.5, 0.8)), // Blue, metallic
             // new Sphere(new Vector(0, -2020, 0), 2000, new ReflectedMaterial(new Vector(1, 1, 0), 0.2, 0.2, 5)), // Yellow, emissive
             // new Sphere(new Vector(-60, 30, 30), 30, new ReflectedMaterial(new Vector(1, 1, 1), 0.0, 0.0, 0)) // White, non-emissive
         ]
     };
+    // for (let a = -11; a < 11; a++) {
+    //     for (let b = -11; b < 11; b++) {
+    //         let choose_mat = Math.random();
+    //         let center = (a + 9*Math.random(), 0.2, b + 9*Math.random());
+    //         if (choose_mat < 0.8) {
+    //             // diffuse
+    //             let albedo = color::random() * color::random();
+    //             sphere_material = make_shared<lambertian>(albedo);
+    //             world.add(make_shared<sphere>(center, 0.2, sphere_material));
+    //         } else if (choose_mat < 0.95) {
+    //             // metal
+    //             auto albedo = color::random(0.5, 1);
+    //             auto fuzz = random_double(0, 0.5);
+    //             sphere_material = make_shared<metal>(albedo, fuzz);
+    //             world.add(make_shared<sphere>(center, 0.2, sphere_material));
+
 }
 
 function render() {
@@ -113,9 +138,12 @@ function render() {
     let startTime = performance.now();
     let prevPerformance, nowPerformance;
 
+
+
     let ttt = new Vector(0, 0, 0);
     let lim = 1000
-    let check = [-lim, lim];
+    let check = [-lim, lim, -lim, lim, -lim, lim];
+
     let te, t = 20
     let cur = 0;
     for (let y = 0; y < height; y++) {
@@ -130,11 +158,21 @@ function render() {
                 color = color.add(traceRay(ray, scene, renderer.maxBounces, xSegment));
                 // color = color.add(new Vector(0, xSegment , 0))
             }
-            if (camera.position != cameraControl) {
+            if (renderer.debugMode && camera.position != cameraControl) {
                 console.log("CAMERAA", cameraControl, camera.position, camera, "cameraa")
                 cameraControl = camera.position
             }
             color = color.multiply(1 / (renderer.samplesPerPixel));
+
+            let temp = color
+            if (temp.x > check[0])  check[0] = temp.x
+            if (temp.x <  check[1])  check[1] = temp.x
+            if (temp.y >  check[2])  check[2] = temp.y
+            if (temp.y <  check[3])  check[3] = temp.y
+            if (temp.z >  check[4])  check[4] = temp.z
+            if (temp.z <  check[5])  check[5] = temp.z
+
+
             let index = (y * width + x) * 4;
             data[index] = Math.sqrt(color.x) * 255;
             data[index + 1] = Math.sqrt(color.y) * 255;
@@ -142,12 +180,15 @@ function render() {
             data[index + 3] = 255;
 
             //performance indicator t
-            if (te != Math.floor((y / height) * t)) {
-                te = Math.floor((y / height) * t)
+            if (te != Math.floor(((y+1) / height) * t)) {
+                te = Math.floor(((y+1) / height) * t)
                 prevPerformance = nowPerformance;
                 nowPerformance = performance.now()
-                console.log(Math.round((y / height) * 100) + "%.. ", Math.trunc(nowPerformance - startTime), "ms (+", Math.trunc(nowPerformance - prevPerformance), "ms)")
-
+                console.log(Math.round(((y+1) / height) * 100) + "%.. ", Math.trunc(nowPerformance - startTime), "ms (+", Math.trunc(nowPerformance - prevPerformance), "ms)")
+                console.log(temp)
+                console.log("x :" +  check[1] + " to " +  check[0])
+                console.log("y :" +  check[3] + " to " +  check[2])
+                console.log("z :" +  check[5] + " to " +  check[4])
             }
         }
     }
@@ -216,6 +257,15 @@ function setupControls() {
 
     document.getElementById('renderOnce').addEventListener('change', function () {
         renderer.setRenderOnce(this.checked);
+        if (renderer.renderOnChange) render();
+    });
+
+    document.getElementById('debugMode').addEventListener('change', function () {
+        renderer.setDebugMode(this.checked);
+        if (renderer.debugMode) {
+            renderer.setSamplesPerPixel(1);
+            renderer.setNumBounces(2);
+        };
         if (renderer.renderOnChange) render();
     });
 

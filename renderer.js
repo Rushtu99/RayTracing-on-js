@@ -1,4 +1,6 @@
-import { Vector, Ray, Color, getUnitNormalVector } from './utils.js';
+import { Vector, Ray, Color } from './utils.js';
+import { renderer } from './main.js'
+import { ReflectedMaterial } from './materials.js';
 let light = new Vector(3, -3, 1).normalize()
 let lightIntensity = 100
 // let light = new Vector(100,0,-10);
@@ -9,15 +11,28 @@ let ttt = new Vector(0, 0, 0)
 
 
 export function traceRay(ray, scene, depth, xSegment) {
-    if (depth == 0) return new Color(255, 255, 255); // Terminate recursion
+    let attenuation = 0.7
+    if(renderer.debugMode)attenuation = xSegment; //0.7
 
+    if (depth == 0) return new Color(0, 0, 0); // Terminate recursion
     let hit = scene.intersect(ray);
     if (hit) {
+        // let color = new Vector(0,0,0)
+        let color = hit.obj.color(hit).multiply(1)
         // return hit.obj.material.color
-        let attenuation = xSegment; //0.7
-        let nextRay = hit.obj.material.ray(ray, hit);
-        // color = color.add(traceRay(nextRay, scene, depth - 1, xSegment).multiply(attenuation))
-        return traceRay(nextRay, scene, depth - 1, xSegment).multiply(attenuation)
+        // if (hit.obj.material.constructor.name == "ReflectedMaterial") {
+        //     attenuation = 1
+        // }
+        let currColor = hit.obj.color(hit)
+        for (let i = 0; i < renderer.bouncedRays; i++) {
+            let nextRay = hit.obj.material.scatteredRay(ray, hit);
+            if (nextRay)
+                color = color.add(currColor.multiColor(traceRay(nextRay, scene, depth - 1, xSegment).multiply(1)))
+        }
+        color = color.multiply(1 / (renderer.bouncedRays));
+
+        // return hit.object.material.color.dot(traceRay(nextRay, scene, depth - 1, xSegment).multiply(attenuation))
+        return color
         // return traceRay(nextRay, scene, depth - 1, xSegment).multiply(attenuation);
     } // Background color
 

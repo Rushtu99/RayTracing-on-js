@@ -1,43 +1,41 @@
 import { Vector, Ray, Color } from './utils.js';
-import { renderer } from './main.js'
+import { scene } from './scene-config.js'
+import { renderer } from './renderer-config.js'
 import { ReflectedMaterial } from './materials.js';
 let light = new Vector(3, -3, 1).normalize()
 let lightIntensity = 100
 // let light = new Vector(100,0,-10);
 let lim = 100000
 let check = [-lim, lim, -lim, lim, -lim, lim];
-let temp = 0;
+let temp = null;
 let ttt = new Vector(0, 0, 0)
 
-
-export function traceRay(ray, scene, depth, xSegment) {
+export function traceRay(ray, depth, xSegment = 0.7) {
+    renderer.incTraceRay()
     let attenuation = 0.7
-    if(renderer.debugMode)attenuation = xSegment; //0.7
+    if (renderer.debugMode) attenuation = xSegment; //0.7
 
     if (depth == 0) return new Color(0, 0, 0); // Terminate recursion
     let hit = scene.intersect(ray);
     if (hit) {
-        // let color = new Vector(0,0,0)
-        let color = hit.obj.color(hit).multiply(1)
-        // return hit.obj.material.color
-        // if (hit.obj.material.constructor.name == "ReflectedMaterial") {
-        //     attenuation = 1
-        // }
+        let color = new Vector(0, 0, 0)
+        if (hit.obj.material.constructor.name == "EmmisiveMaterial") {
+            attenuation = 10
+        }
+        color = hit.obj.color(hit).multiply(0.15 * attenuation)
         let currColor = hit.obj.color(hit)
+
         for (let i = 0; i < renderer.bouncedRays; i++) {
             let nextRay = hit.obj.material.scatteredRay(ray, hit);
+
             if (nextRay)
-                color = color.add(currColor.multiColor(traceRay(nextRay, scene, depth - 1, xSegment).multiply(1)))
+                color = color.add(currColor.multiColor(traceRay(nextRay, depth - 1, xSegment).multiply(attenuation)))
         }
         color = color.multiply(1 / (renderer.bouncedRays));
 
-        // return hit.object.material.color.dot(traceRay(nextRay, scene, depth - 1, xSegment).multiply(attenuation))
         return color
-        // return traceRay(nextRay, scene, depth - 1, xSegment).multiply(attenuation);
-    } // Background color
-
-
-
+    } 
+    // Background color
     let a = 0.5 * (ray.direction.y * 2 + 1.0);
     return ((new Vector(1.0, 1.0, 1.0)).multiply(1.0 - a)).add((new Vector(0.5, 0.7, 1.0)).multiply(a));
 }

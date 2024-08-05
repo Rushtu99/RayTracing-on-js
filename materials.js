@@ -2,11 +2,9 @@ import { Vector, Ray } from "./utils.js";
 import { getUnitNormalVector } from './utilFunctions.js'
 
 export class Material {
-    constructor(color, emissiveColor = new Vector(0, 0, 0), roughness = 0, metallic = 0) {
+    constructor(color, emissiveColor = new Vector(0, 0, 0)) {
         this.color = color;
         this.emissiveColor = emissiveColor;
-        this.roughness = roughness;
-        this.metallic = metallic;
     }
     scatteredRay() {
         return null;
@@ -16,8 +14,8 @@ export class Material {
     }
 }
 export class DiffusedMaterial extends Material {
-    constructor(color, emissiveColor = new Vector(0, 0, 0), roughness = 0, metallic = 0) {
-        super(color, emissiveColor, roughness, metallic)
+    constructor(color, emissiveColor = new Vector(0, 0, 0)) {
+        super(color, emissiveColor)
     }
 
     scatteredRay(ray, hit) {
@@ -27,37 +25,58 @@ export class DiffusedMaterial extends Material {
 }
 
 export class ReflectedMaterial extends Material {
-    constructor(color, emissiveColor = new Vector(0, 0, 0), roughness = 0, metallic = 0) {
-        super(color, emissiveColor, roughness, metallic)
-
+    constructor(color, fuzzyFactor, emissiveColor = new Vector(0, 0, 0)) {
+        super(color, emissiveColor)
+        this.fuzzyFactor = fuzzyFactor;
     }
+
     scatteredRay(ray, hit) {
-        let fuzzyFactor = 0.01;
-        let normal = getUnitNormalVector().multiply(fuzzyFactor).add(hit.normal);
+        let normal = getUnitNormalVector().multiply(this.fuzzyFactor).add(hit.normal);
         let direction = ray.direction.subtract(normal.multiply(2 * ray.direction.dot(normal)));
         return new Ray(hit.point, direction, hit.obj);
     }
 }
 
 export class RefractedMaterial extends Material {
-    constructor(color, emissiveColor = new Vector(0, 0, 0), roughness = 0, metallic = 0) {
-        super(color, emissiveColor, roughness, metallic)
+    constructor(color, refraction_index, emissiveColor = new Vector(0, 0, 0)) {
+        super(new Vector(1, 1, 1), emissiveColor)
+        this.refraction_index = refraction_index
 
     }
-    // scatteredRay(ray, hit,etai_over_etat) {
-    //     let front_face = ray.direction().dot(normal) < 0;
-    // //     attenuation = color(1.0, 1.0, 1.0);
-    //     let ri = hit.front_face ? (1.0/refraction_index) : refraction_index;
 
-    //     let unit_direction = unit_vector(r_in.direction());
-    //     let refracted = refract(unit_direction, rec.normal, ri);
+    scatteredRay(ray, hit) {
+        let in_d = hit.normal.dot(ray.direction)
+        let ri = in_d >= 0 ? (1.0 / this.refraction_index) : this.refraction_index;
 
-    // }
+        let cos_theta = Math.min(-1 * in_d, 1.0);
+        let sin_theta = Math.sqrt(1.0 - cos_theta * cos_theta);
+        let cannot_refract = ri * sin_theta >= 1.0;
+
+
+        if (cannot_refract || this.reflectance(cos_theta, ri) > Math.random()) {
+            let r_out_perp = (ray.direction.add(hit.normal.multiply(cos_theta))).multiply(ri);
+            let r_out_parallel = hit.normal.multiply(-Math.sqrt(Math.abs(1 - r_out_perp.length() ** 2)));
+            return new Ray(hit.point, r_out_perp.add(r_out_parallel), hit.obj);
+        }
+        else {
+            let fuzzyFactor = 0.01;
+            let normal = getUnitNormalVector().multiply(fuzzyFactor).add(hit.normal);
+            let direction = ray.direction.subtract(normal.multiply(2 * ray.direction.dot(normal)));
+            return new Ray(hit.point, direction, hit.obj);
+        }
+    }
+
+    reflectance(cosine, refraction_index) {
+        // Use Schlick's approximation for reflectance.
+        let r0 = (1 - refraction_index) / (1 + refraction_index);
+        r0 = r0 * r0;
+        return r0 + (1 - r0) * Math.pow((1 - cosine), 5);
+    }
 }
 
 export class EmmisiveMaterial extends Material {
-    constructor(color, emissiveColor = new Vector(0, 0, 0), roughness = 0, metallic = 0) {
-        super(color, emissiveColor, roughness, metallic)
+    constructor(color, emissiveColor = new Vector(0, 0, 0)) {
+        super(color, emissiveColor)
     }
     scatteredRay(ray, hit) {
         return null;

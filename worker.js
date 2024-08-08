@@ -1,6 +1,8 @@
 import { traceRay } from './renderer.js';
-import { Camera, Sphere, Color, Vector } from './utils.js';
+import { Vector } from './utils.js';
+import { Camera } from './camera.js';
 import { renderer } from './renderer-config.js';
+import { setupScene } from './scene-config.js';
 function reconstructCamera(cameraData) {
     return new Camera(
         new Vector(cameraData.position.x, cameraData.position.y, cameraData.position.z),
@@ -12,7 +14,7 @@ function reconstructCamera(cameraData) {
     );
 }
 
-function reconstructScene(sceneData) {
+export function reconstructScene(sceneData) {
     return {
         ...sceneData,
         intersect: function (ray) {
@@ -33,14 +35,16 @@ function reconstructScene(sceneData) {
     }
 }
 
-self.onmessage = function (e) {
+self.onmessage = async function (e) {
+    console.log("hello")
     const { start, end, width, height, camera, scene } = e.data;
     const rendererParams = e.data.renderer
-    // console.log(renderer.maxBounces,"workerr")
+    await setupScene()
+    console.log(renderer.maxBounces, "workerr")
     let localCamera = reconstructCamera(camera);
     let traceRayCount = 0;
     // let localScene = reconstructScene(scene);
-    let { samplesPerPixel, maxBounces} = rendererParams;
+    let { samplesPerPixel, maxBounces } = rendererParams;
     let imageData = new Uint8ClampedArray((end - start) * width * 4);
     for (let y = start; y < end; y++) {
         for (let x = 0; x < width; x++) {
@@ -54,14 +58,14 @@ self.onmessage = function (e) {
             color = color.multiply(1 / samplesPerPixel);
             // color = new Vector(Math.sqrt(color.x), Math.sqrt(color.y), Math.sqrt(color.z));
             let index = ((y - start) * width + x) * 4;
-            imageData[index + 0] = Math.sqrt(color.x)*255;
-            imageData[index + 1] = Math.sqrt(color.y)*255;
-            imageData[index + 2] = Math.sqrt(color.z)*255;
+            imageData[index + 0] = Math.sqrt(color.x) * 255;
+            imageData[index + 1] = Math.sqrt(color.y) * 255;
+            imageData[index + 2] = Math.sqrt(color.z) * 255;
             imageData[index + 3] = 255;
         }
     }
 
     let rayCount = renderer.traceRayCount
-    self.postMessage({ imageData, start, end,rayCount });
+    self.postMessage({ imageData, start, end, rayCount });
     // self.postMessage("gello")
 };

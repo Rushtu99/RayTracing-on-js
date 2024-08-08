@@ -19,13 +19,14 @@ export class DiffusedMaterial extends Material {
     }
 
     scatteredRay(ray, hit) {
+        // console.log("Scattering",hit)
         let seed = getUnitNormalVector().add(hit.normal).normalize()
-        return new Ray(hit.point, seed, hit.obj); // To be implemented
+        return new Ray(hit.point.add(hit.normal.multiply(0.01)), seed, hit.obj); // To be implemented
     }
 }
 
 export class ReflectedMaterial extends Material {
-    constructor(color, fuzzyFactor, emissiveColor = new Vector(0, 0, 0)) {
+    constructor(color, fuzzyFactor= 0.01, emissiveColor = new Vector(0, 0, 0)) {
         super(color, emissiveColor)
         this.fuzzyFactor = fuzzyFactor;
     }
@@ -33,7 +34,7 @@ export class ReflectedMaterial extends Material {
     scatteredRay(ray, hit) {
         let normal = getUnitNormalVector().multiply(this.fuzzyFactor).add(hit.normal);
         let direction = ray.direction.subtract(normal.multiply(2 * ray.direction.dot(normal)));
-        return new Ray(hit.point, direction, hit.obj);
+        return new Ray(hit.point.add(hit.normal.multiply(0.01)), direction, hit.obj);
     }
 }
 
@@ -56,13 +57,13 @@ export class RefractedMaterial extends Material {
         if (cannot_refract || this.reflectance(cos_theta, ri) > Math.random()) {
             let r_out_perp = (ray.direction.add(hit.normal.multiply(cos_theta))).multiply(ri);
             let r_out_parallel = hit.normal.multiply(-Math.sqrt(Math.abs(1 - r_out_perp.length() ** 2)));
-            return new Ray(hit.point, r_out_perp.add(r_out_parallel), hit.obj);
+            return new Ray(hit.point.add(hit.normal.multiply(0.01)), r_out_perp.add(r_out_parallel), hit.obj);
         }
         else {
             let fuzzyFactor = 0.01;
             let normal = getUnitNormalVector().multiply(fuzzyFactor).add(hit.normal);
             let direction = ray.direction.subtract(normal.multiply(2 * ray.direction.dot(normal)));
-            return new Ray(hit.point, direction, hit.obj);
+            return new Ray(hit.point.add(hit.normal.multiply(0.01)), direction, hit.obj);
         }
     }
 

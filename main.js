@@ -1,13 +1,12 @@
 // main.js
-
-import { Vector, Camera, Sphere, Color } from './utils.js';
-import { ReflectedMaterial, DiffusedMaterial, EmmisiveMaterial, RefractedMaterial } from './materials.js'
-import { objectCompare, nFormatter } from "./utilFunctions.js"
+import { Vector } from './utils.js';
+import { nFormatter } from "./utilFunctions.js"
 import { traceRay } from './renderer.js';
 import { Toggle, toggleAutoInit } from './src/tiny-ui-toggle.js';
-import { ShareUrl, ShareUrlAuto } from './src/share-url.js';
+import { ShareUrlAuto } from './src/share-url.js';
 import { renderer, getRendererData } from './renderer-config.js'
 import { scene, camera, setupScene } from './scene-config.js'
+import { loadOBJModels } from './modelParser.js';
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
@@ -72,8 +71,9 @@ let rendering = false;
 let renderInterval;
 
 let workers = [];
-let numWorkers = navigator.hardwareConcurrency-2 || 4;
+let numWorkers = navigator.hardwareConcurrency - 2 || 4;
 let prevPerformance, nowPerformance, prevRays = 0;
+
 function initializeWorkers() {
     let startTime = performance.now();
     let getCount = 0;
@@ -103,7 +103,6 @@ function initializeWorkers() {
             }
 
         };
-
         workers.push(worker);
     }
     distributeRendering()
@@ -124,10 +123,9 @@ function distributeRendering() {
             height,
             renderer: getRendererData(),
             camera: camera.serialize(),
-            scene: getSceneData(scene),
+            // scene: getSceneData(scene),
         });
     }
-
 }
 
 function parallelRender() {
@@ -301,7 +299,6 @@ function setupControls() {
     document.getElementById('camZ-').addEventListener('click', cameraReset);
 
 
-
     document.getElementById('startRender').addEventListener('click', startRendering);
     document.getElementById('stopRender').addEventListener('click', stopRendering);
 }
@@ -346,8 +343,8 @@ function resizeCanvas() {
     camera.update(canvas);
 }
 
+
+
 window.addEventListener('resize', resizeCanvas);
-setupScene();
 setupControls();
 resizeCanvas();
-

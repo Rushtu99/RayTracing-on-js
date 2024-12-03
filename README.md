@@ -2,77 +2,94 @@
 
 This project implements a ray tracing engine in JavaScript, featuring realistic rendering techniques including BRDF (Bidirectional Reflectance Distribution Function), emissive materials, metallic materials, and orbit camera controls. The engine also includes a control panel for adjusting various rendering parameters and showcases a scene with multiple spheres to demonstrate different material properties.
 
-## Features
+## Features and Code Flow
 
-- **Ray Tracing**: Compute pixel colors by tracing rays through a scene.
-- **Realistic BRDF**: Model realistic surface interactions with properties such as diffuse, specular, roughness, and metallicity.
-- **Emissive Materials**: Support for materials that emit light.
-- **Orbit Camera Controls**: Interactive camera movement around the scene.
-- **Accumulation**: Accumulate render results to reduce noise.
-- **Dynamic Scene**: Includes multiple spheres with different material properties.
-- **Control Panel**: Adjustable sliders, inputs, and checkboxes for interactive control.
+### 1. Scene Setup
+- **File**: `scene-config.js`
+- **Key Functions**:
+  - `setupScene()`: Initializes the camera and creates scene objects.
+  - `scene.add()`: Adds objects to the scene.
+  - `scene.intersect()`: Checks for ray intersections with scene objects.
 
-## Files
+### 2. Ray Tracing
+- **File**: `main.js`
+- **Key Functions**:
+  - `render()`: Iterates over each pixel, creating rays and accumulating color.
+  - `traceRay()`: Traces a ray through the scene, handling bounces and material interactions.
+- **Process**:
+  1. For each pixel, create a ray from the camera.
+  2. Call `traceRay()` to determine the color for that pixel.
+  3. Accumulate colors if enabled for noise reduction.
 
-### `index.html`
-Sets up the canvas and control panel, including links to JavaScript files and CSS.
+### 3. Material Handling
+- **File**: `materials.js`
+- **Classes**: `ReflectedMaterial`, `DiffusedMaterial`, `EmmisiveMaterial`, `RefractedMaterial`
+- **Process**: Each material class defines how light interacts with the surface, including reflection, diffusion, emission, and refraction.
 
-### `styles.css`
-CSS file for styling the canvas, control panel, and general layout.
+### 4. Geometric Primitives
+- **File**: `objects.js`
+- **Classes**: `Sphere` (and potentially other shapes)
+- **Key Methods**: `intersect()`: Calculates ray intersections with the object.
 
-### `utils.js`
-Contains utility functions and classes:
-- `Vector`: Basic vector operations, including addition, subtraction, dot product, cross product, normalization, and length calculation.
-- `Ray`: Represents a ray with an origin and direction.
-- `Material`: Represents material properties such as color, emissive color, roughness, and metallicity.
-- `Camera`: Represents the camera with methods for orbit control and view/projection matrix calculations.
+### 5. Camera and Ray Generation
+- **File**: `camera.js`
+- **Class**: `Camera`
+- **Key Methods**:
+  - `getRay()`: Generates a ray for a given pixel.
+  - `orbit()`: Handles camera movement for interactive viewing.
 
-### `renderer.js`
-Handles the rendering logic:
-- `traceRay()`: Traces a ray through the scene and computes the color at the intersection point.
+### 6. Utility Functions
+- **File**: `utils.js`
+- **Classes**: `Vector`, `Ray`
+- **Functions**: Mathematical operations for vectors, colors, and other utilities.
 
-### `main.js`
-Main JavaScript file that initializes the scene, handles rendering, and manages orbit camera controls. Features:
-- Initialization of canvas and camera.
-- Scene setup with multiple spheres.
-- Rendering logic supporting accumulation and multiple samples per pixel.
-- Orbit controls for interactive camera movement.
-- Event listeners for window resizing and control panel interactions.
+### 7. Parallel Processing
+- **File**: `main.js`
+- **Functions**:
+  - `initializeWorkers()`: Sets up Web Workers for parallel rendering.
+  - `distributeRendering()`: Divides the rendering task among workers.
+  - `parallelRender()`: Initiates parallel rendering process.
 
-## Function Call Flow
+### 8. User Interface and Controls
+- **File**: `main.js`
+- **Functions**:
+  - Event listeners for UI controls (sliders, checkboxes).
+  - `startRendering()`, `stopRendering()`: Control the rendering process.
 
-Here is an overview of the function call flow for rendering an image:
+### 9. Performance Monitoring
+- **File**: `main.js`
+- **Process**: Logs rendering time, ray count, and rays per second for performance analysis.
+
+## Rendering Process Flow
 
 1. **Initialization**:
-   - `main.js`: Initializes the `Camera`, `Scene`, and sets up the canvas.
-   - `main.js`: Event listeners for resizing and user interactions are set up.
+   - Set up the scene, camera, and UI controls.
+   - Initialize rendering parameters.
 
-2. **Rendering**:
-   - `main.js`: Calls `render()` to start the rendering process.
-   - `main.js -> render()`: Clears the canvas and iterates over each pixel.
-     - For each pixel:
-       - `main.js -> render() -> traceRay()`: Creates a `Ray` from the camera and pixel position.
-       - `renderer.js -> traceRay()`: 
-         - Checks for intersections with objects in the scene.
-         - Calculates color based on intersection and material properties.
-         - Handles multiple bounces if reflections are enabled.
-       - `main.js -> render()`: Accumulates color values if the accumulate checkbox is checked.
+2. **Render Loop**:
+   - For each pixel:
+     a. Generate a ray from the camera.
+     b. Trace the ray through the scene.
+     c. Calculate color based on material interactions.
+     d. Accumulate color samples if enabled.
 
-3. **Camera Controls**:
-   - `main.js`: Listens for drag events on the canvas.
-   - `main.js -> canvas.addEventListener('mousemove')`: Updates the camera's position and orientation using `Camera.orbit()`.
-   - `Camera.orbit()`: Calculates new camera position and updates the view matrix.
-   - `main.js -> render()`: Rerenders the scene after updating the camera position.
+3. **Ray Tracing**:
+   - Check for intersections with scene objects.
+   - Handle reflections, refractions, and emissions based on material properties.
+   - Implement depth-of-field effects if enabled.
 
-4. **Window Resizing**:
-   - `main.js -> window.addEventListener('resize')`: Adjusts the canvas size and updates the camera aspect ratio.
-   - `main.js -> render()`: Rerenders the scene with the updated canvas size and aspect ratio.
+4. **Parallel Processing** (if enabled):
+   - Divide the image into chunks.
+   - Distribute chunks to Web Workers.
+   - Combine results from all workers.
 
-## Example Scene
+5. **Post-Processing**:
+   - Apply gamma correction.
+   - Update the canvas with the rendered image.
 
-The scene includes five spheres with various material properties:
-- **Red Sphere**: Diffuse material.
-- **Green Sphere**: Reflective material.
-- **Blue Sphere**: Dielectric material with a glossy finish.
-- **White Sphere**: High roughness and metallicity.
-- **Yellow Sphere**: Fully metallic material.
+6. **User Interaction**:
+   - Handle camera movements.
+   - Update rendering parameters based on UI controls.
+   - Re-render the scene when changes occur.
+
+This ray tracing engine combines various components to create a flexible and interactive rendering system, capable of producing realistic images with a variety of material types and lighting conditions.

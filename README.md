@@ -2,6 +2,8 @@
 
 This project implements a ray tracing engine in JavaScript, featuring realistic rendering techniques including BRDF (Bidirectional Reflectance Distribution Function), emissive materials, metallic materials, and orbit camera controls. The engine also includes a control panel for adjusting various rendering parameters and showcases a scene with multiple spheres to demonstrate different material properties.
 
+deployed on: https://rushtu99.github.io/RayTracing-on-js/
+
 ## Features and Code Flow
 
 ### 1. Scene Setup
